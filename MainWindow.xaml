@@ -5,8 +5,21 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:com.LinYu.demo"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="800" Loaded="Window_Loaded">
     <Grid>
-        
+        <Label Content="机器人QQ：" Width="100" Height="25" Margin="10,10,683.6,380"/>
+        <TextBox Text="{Binding Config.RobotQQ}" Width="150" Height="25" Margin="115,13,528.6,382"/>
+        <Label Content="数据库IP：" Width="100" Height="25" Margin="10,43,683.6,352"/>
+        <TextBox Text="{Binding Config.DatabaseIP}" Width="150" Height="25" Margin="115,43,528.6,352"/>
+        <Label Content="数据库名：" Width="100" Height="25" Margin="10,73,683.6,322"/>
+        <TextBox Text="{Binding Config.DatabaseName}" Width="150" Height="25" Margin="115,73,528.6,322"/>
+        <Label Content="数据库账号：：" Width="100" Height="25" Margin="10,103,683.6,292"/>
+        <TextBox Text="{Binding Config.DatabaseAccount}" Width="150" Height="25" Margin="115,103,528.6,292"/>
+        <Label Content="数据库密码：" Width="100" Height="25" Margin="10,133,683.6,262"/>
+        <TextBox Text="{Binding Config.DatabasePassword}" Width="150" Height="25" Margin="115,133,528.6,262"/>
+        <Label Content="签到最大金币数：" Width="100" Height="25" Margin="10,163,683.6,232"/>
+        <TextBox Text="{Binding Config.CheckInMaxCoins}" Width="150" Height="25" Margin="115,163,528.6,232"/>
+        <Label Content="签到最小金币数：" Width="100" Height="25" Margin="10,193,683.6,202"/>
+        <TextBox Text="{Binding Config.CheckInMinCoins}" Width="150" Height="25" Margin="115,193,528.6,202"/>
     </Grid>
 </Window>
