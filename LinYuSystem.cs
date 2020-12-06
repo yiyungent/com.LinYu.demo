@@ -87,10 +87,10 @@ namespace com.linlin.demo
             {
                 switch (e.Message.Text)
                 {
-                    case "签到":
+                    case "小奏签到":
                         CheckIn(e.FromQQ.Id, e.FromGroup.Id);
                         break;
-                    case "金币":
+                    case "小奏金币":
                         Coins(e.FromQQ.Id, e.FromGroup.Id);
                         break;
                 }
