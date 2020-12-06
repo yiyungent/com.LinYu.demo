@@ -24,7 +24,7 @@ namespace com.linlin.demo
                     _PluginInfo = new PluginInfo()
                     {
                         Author = "Eruru",
-                        Description = "BUG机器人插件",
+                        Description = "BUG立华奏",
                         Name = "立华奏机器人",
                         PackageId = "com.LinYu.demo",
                         Version = new Version(1, 0, 0, 0)
