@@ -87,6 +87,12 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnReceiveGroupMessage(QMGroupMessageEventArgs e)
         {
+            long robotQQ = 377359254;
+            string atCode = $"[@{robotQQ}]";
+            if (e.Message.Text.Contains(atCode))
+            {
+                Reply(robotQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
+            }
             lock (LoadConfigLock)
             {
                 switch (e.Message.Text)
@@ -98,13 +104,8 @@ namespace com.linlin.demo
                         Coins(e.FromQQ.Id, e.FromGroup.Id);
                         break;
                 }
-                string atCode = $"[@{e.FromQQ}]";
-                if (e.Message.Text.Contains(atCode))
-                {
-                    Reply(Config.RobotQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
-                }
-                return QMEventHandlerTypes.Continue;
             }
+            return QMEventHandlerTypes.Continue;
         }
         /// <summary>
         /// 设置菜单窗口
@@ -157,7 +158,7 @@ namespace com.linlin.demo
             Reply(qq,group, $"你目前拥有{coins}枚金币");
         }
         /// <summary>
-        /// 复读姬
+        /// 向群组或QQ好友发送一条消息
         /// </summary>
         /// <param name="qq"></param>
         /// <param name="group"></param>
