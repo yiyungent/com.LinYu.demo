@@ -23,9 +23,9 @@ namespace com.linlin.demo
                 {
                     _PluginInfo = new PluginInfo()
                     {
-                        Author = "作者",
-                        Description = "插件描述",
-                        Name = "插件名",
+                        Author = "Eruru",
+                        Description = "BUG机器人插件",
+                        Name = "立华奏机器人",
                         PackageId = "com.LinYu.demo",
                         Version = new Version(1, 0, 0, 0)
                     };
@@ -80,23 +80,35 @@ namespace com.linlin.demo
         {
             JsonConvert.Serialize(Config ?? new Config (), ConfigPath, false);
         }
-
+        /// <summary>
+        /// 当收到群组消息
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
         public override QMEventHandlerTypes OnReceiveGroupMessage(QMGroupMessageEventArgs e)
         {
             lock (LoadConfigLock)
             {
                 switch (e.Message.Text)
                 {
-                    case "小奏签到":
+                    case "立华奏签到":
                         CheckIn(e.FromQQ.Id, e.FromGroup.Id);
                         break;
-                    case "小奏金币":
+                    case "立华奏金币":
                         Coins(e.FromQQ.Id, e.FromGroup.Id);
                         break;
+                }
+                string atCode = $"[@{e.FromQQ}]";
+                if (e.Message.Text.Contains(atCode))
+                {
+                    Reply(Config.RobotQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
                 }
                 return QMEventHandlerTypes.Continue;
             }
         }
+        /// <summary>
+        /// 设置菜单窗口
+        /// </summary>
         public override void OnOpenSettingMenu()
         {
             if (MainWindow is null)
@@ -113,7 +125,11 @@ namespace com.linlin.demo
             MainWindow.WindowState = System.Windows.WindowState.Normal;
             MainWindow.Activate();
         }
-
+        /// <summary>
+        /// 机器人功能
+        /// </summary>
+        /// <param name="qq"></param>
+        /// <param name="group"></param>
         void CheckIn (long qq, long group)
         {
             int coins = Random.Next(Config.CheckInMinCoins, Config.CheckInMaxCoins + 1);
@@ -130,13 +146,22 @@ namespace com.linlin.demo
                     throw new NotImplementedException();
             }
         }
-
+        /// <summary>
+        /// 金币查询
+        /// </summary>
+        /// <param name="qq"></param>
+        /// <param name="group"></param>
         void Coins (long qq, long group)
         {
             int coins = Convert.ToInt32(MySqlHelper.ExecuteScalar($"select coins from checkin where qq = {qq}"));
             Reply(qq,group, $"你目前拥有{coins}枚金币");
         }
-
+        /// <summary>
+        /// 复读姬
+        /// </summary>
+        /// <param name="qq"></param>
+        /// <param name="group"></param>
+        /// <param name="message"></param>
         void Reply (long qq, long group, object message)
         {
             if (group > 0)
