@@ -45,7 +45,6 @@ namespace com.linlin.demo
         string ConfigPath;
         object LoadConfigLock = new object();
 
-       public long robotQQ = 377359254;
         /// <summary>
         /// config配置文件
         /// </summary>
@@ -94,10 +93,10 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnReceiveGroupMessage(QMGroupMessageEventArgs e)
         {
-            string atCode = $"[@{robotQQ}]";
+            string atCode = $"[@{e.RobotQQ}]";
             if (e.Message.Text.Contains(atCode))
             {
-                Reply(robotQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
+                Reply(e.RobotQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
             }
             lock (LoadConfigLock)
             {
@@ -185,7 +184,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberBeAllowAdd(QMGroupMemberIncreaseEventArgs e)
         {
-            Reply(e.RobotQQ, e.FromGroup, "欢迎新人进群：么么哒：" + e.FromQQ);
+            Reply(e.FromQQ, e.FromGroup, "欢迎新人进群：么么哒：");
             return base.OnGroupMemberBeAllowAdd(e);
         }
         /// <summary>
@@ -205,7 +204,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberLeave(QMGroupMemberDecreaseEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "离开了本群：" + e.RobotQQ);
+            Reply(e.FromQQ, e.FromGroup, "离开了本群：" + e.FromQQ);
             return base.OnGroupMemberLeave(e);
         }
         /// <summary>
@@ -228,6 +227,35 @@ namespace com.linlin.demo
             Reply(e.FromQQ, e.FromGroup,e.FromQQ+"撤回了一条涩涩的消息");
             return base.OnGroupMemberRemoveMessage(e);
         }
-
+        /// <summary>
+        /// 当群组的组员被禁言
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupMemberSetBanSpeak(QMGroupMemberBanSpeakEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup,"被"+ e.OperateQQ+"禁言");
+            return base.OnGroupMemberSetBanSpeak(e);
+        }
+        /// <summary>
+        /// 当群组被同意申请加入请求
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupApplyAddRequest(QMGroupAddRequestEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup, "被" + e.OperateQQ + "同意加入本群");
+            return base.OnGroupApplyAddRequest(e);
+        }
+        /// <summary>
+        /// 群成员被解除禁言触发
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupMemberRemoveBanSpeak(QMGroupMemberBanSpeakEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup, "被" + e.OperateQQ + "解除禁言");
+            return base.OnGroupMemberRemoveBanSpeak(e);
+        }
     }
 }
