@@ -93,10 +93,11 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnReceiveGroupMessage(QMGroupMessageEventArgs e)
         {
-            string atCode = $"[@{e.RobotQQ}]";
+            long RobotQQ = 377359254;
+            string atCode = $"[@{RobotQQ}]";
             if (e.Message.Text.Contains(atCode))
             {
-                Reply(e.RobotQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
+                Reply(e.FromQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
             }
             lock (LoadConfigLock)
             {
@@ -218,7 +219,7 @@ namespace com.linlin.demo
             return base.OnGroupNameChange(e);
         }
         /// <summary>
-        /// 当群员撤回消息
+        /// 当群员撤回消息     有BUG
         /// </summary>
         /// <param name="e"></param>
         /// <returns></returns>
@@ -234,7 +235,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberSetBanSpeak(QMGroupMemberBanSpeakEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup,"被"+ e.OperateQQ+"禁言");
+            Reply(e.FromQQ, e.FromGroup,"被管理员"+ e.OperateQQ+"禁言");
             return base.OnGroupMemberSetBanSpeak(e);
         }
         /// <summary>
@@ -254,8 +255,18 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberRemoveBanSpeak(QMGroupMemberBanSpeakEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "被" + e.OperateQQ + "解除禁言");
+            Reply(e.FromQQ, e.FromGroup, "被管理员" + e.OperateQQ + "解除禁言");
             return base.OnGroupMemberRemoveBanSpeak(e);
+        }
+        /// <summary>
+        /// 群组移除群成员触发事件
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupManagerRemoveMember(QMGroupMemberDecreaseEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup, "被管理员：" + e.OperateQQ + "踢出去");
+            return base.OnGroupManagerRemoveMember(e);
         }
     }
 }
