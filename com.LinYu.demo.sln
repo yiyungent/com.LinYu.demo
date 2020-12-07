@@ -5,7 +5,13 @@ VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "com.LinYu.demo", "com.LinYu.demo.csproj", "{D9885116-25FB-458B-B6D9-D49338632056}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Eruru.Command", "Eruru.Command\Eruru.Command.shproj", "{07B1F8A4-9B01-4E7D-93C7-E9F64815D21B}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Eruru.Command\Eruru.Command.projitems*{07b1f8a4-9b01-4e7d-93c7-e9f64815d21b}*SharedItemsImports = 13
+		Eruru.Command\Eruru.Command.projitems*{d9885116-25fb-458b-b6d9-d49338632056}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x86 = Debug|x86

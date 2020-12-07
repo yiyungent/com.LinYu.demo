@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>07b1f8a4-9b01-4e7d-93c7-e9f64815d21b</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Eruru.Command</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CommandAPI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Command.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CommandSystem.cs" />
+  </ItemGroup>
+</Project>

@@ -6,7 +6,9 @@ using QQMini.PluginSDK.Core.Model;
 using System;
 using System.IO;
 using System.Text;
-
+using System.Collections.Generic;
+using Eruru.Command;
+using Eruru.Http;
 
 namespace com.linlin.demo
 {
@@ -42,8 +44,11 @@ namespace com.linlin.demo
         public static Config Config;
 
         MainWindow MainWindow;
+        List<QQMessage> QQMessages = new List<QQMessage>();
         string ConfigPath;
-        object LoadConfigLock = new object();
+        static object DatabaseLock = new object();
+        static object QQMessageLock = new object();
+        CommandSystem<QQMessage> CommandSystem = new CommandSystem<QQMessage>();
 
         /// <summary>
         /// config配置文件
@@ -53,6 +58,7 @@ namespace com.linlin.demo
             ConfigPath = $@"Data\{PluginInfo.PackageId}\Config.json";
             LoadConfig();
             SaveConfig();
+            CommandSystem.Register<Commands>();
         }
 
         /// <summary>
@@ -64,7 +70,7 @@ namespace com.linlin.demo
             {
                 SaveConfig();
             }
-            lock (LoadConfigLock) {
+            lock (DatabaseLock) {
                 Config = JsonConvert.DeserializeFile(ConfigPath, Config);
                 MySqlHelper?.Dispose();
                 StringBuilder connectionString = new StringBuilder();
@@ -93,24 +99,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnReceiveGroupMessage(QMGroupMessageEventArgs e)
         {
-            long RobotQQ = 377359254;
-            string atCode = $"[@{RobotQQ}]";
-            if (e.Message.Text.Contains(atCode))
-            {
-                Reply(e.FromQQ, e.FromGroup.Id, e.Message.Text.Replace(atCode, string.Empty).Trim());
-            }
-            lock (LoadConfigLock)
-            {
-                switch (e.Message.Text)
-                {
-                    case "小奏签到":
-                        CheckIn(e.FromQQ.Id, e.FromGroup.Id);
-                        break;
-                    case "小奏金币":
-                        Coins(e.FromQQ.Id, e.FromGroup.Id);
-                        break;
-                }
-            }
+            OnReceiveMessage(new QQMessage (e));
             return QMEventHandlerTypes.Continue;
         }
         /// <summary>
@@ -137,17 +126,17 @@ namespace com.linlin.demo
         /// </summary>
         /// <param name="qq"></param>
         /// <param name="group"></param>
-        void CheckIn (long qq, long group)
+        void CheckIn (QQMessage qqMessage)
         {
             int coins = Random.Next(Config.CheckInMinCoins, Config.CheckInMaxCoins + 1);
-            switch (MySqlHelper.ExecuteScalar ($"select checkin ({qq}, {coins})"))
+            switch (MySqlHelper.ExecuteScalar ($"select checkin ({qqMessage.QQ}, {coins})"))
             {
                 case 1:
-                    Reply(qq, group, "今日已签到");
+                    qqMessage. Reply("今日已签到");
                     break;
                 case 2:
                 case 3:
-                    Reply(qq, group, $"签到成功，金币加{coins}");
+                    qqMessage.Reply( $"签到成功，金币加{coins}");
                     break;
                 default:
                     throw new NotImplementedException();
@@ -158,26 +147,37 @@ namespace com.linlin.demo
         /// </summary>
         /// <param name="qq"></param>
         /// <param name="group"></param>
-        void Coins (long qq, long group)
+        void Coins (QQMessage qqMessage)
         {
-            int coins = Convert.ToInt32(MySqlHelper.ExecuteScalar($"select coins from checkin where qq = {qq}"));
-            Reply(qq,group, $"你目前拥有{coins}枚金币");
+            int coins = Convert.ToInt32(MySqlHelper.ExecuteScalar($"select coins from checkin where qq = {qqMessage.QQ}"));
+            qqMessage.Reply($"你目前拥有{coins}枚金币");
         }
-        /// <summary>
-        /// 向群组或QQ好友发送一条消息
-        /// </summary>
-        /// <param name="qq"></param>
-        /// <param name="group"></param>
-        /// <param name="message"></param>
-        void Reply (long qq, long group, object message)
-        {
-            if (group > 0)
-            {
-                QMApi.SendGroupMessage(Config.RobotQQ, group, $"[@{qq}]{Environment.NewLine}{message}");
-                return;
+
+        public static T GetQQValue<T> (long qq, string name) {
+            lock (DatabaseLock) {
+                return (T)Convert.ChangeType(MySqlHelper.ExecuteScalar($"select {name} from checkin where qq = {qq}"), typeof (T));
             }
-            QMApi.SendFriendMessage(Config.RobotQQ, qq, message.ToString());
         }
+
+        public static void SetQQValue(long qq, string name, object value) {
+            SetQQValue(qq, new List<KeyValuePair<string, object>>() {
+             new KeyValuePair<string, object> (name, value)
+            });
+        }
+
+        public static void SetQQValue (long qq, List<KeyValuePair<string, object>> items) {
+            lock (DatabaseLock) {
+                StringBuilder stringBuilder = new StringBuilder();
+                for (int i=0;i<items.Count;i++) {
+                    if (i > 0) {
+                        stringBuilder.Append(',');
+                    }
+                    stringBuilder.Append($"{items[i].Key}={items[i].Value}");
+                }
+                 MySqlHelper.ExecuteScalar($"update checkin set {stringBuilder} where qq = {qq}");
+            }
+        }
+
         /// <summary>
         /// 当新人进群提示输出
         /// </summary>
@@ -185,7 +185,8 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberBeAllowAdd(QMGroupMemberIncreaseEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "欢迎新人进群：么么哒：");
+
+            QQMessage.Reply(e.FromQQ, e.FromGroup, "欢迎新人进群：么么哒：");
             return base.OnGroupMemberBeAllowAdd(e);
         }
         /// <summary>
@@ -195,7 +196,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberCardChange(QMGroupMemberCardChangeEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup,"修改了名片："+e.NewCard);
+            QQMessage.Reply (e.FromQQ, e.FromGroup, "修改了名片："+e.NewCard);
             return base.OnGroupMemberCardChange(e);
         }
         /// <summary>
@@ -205,7 +206,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberLeave(QMGroupMemberDecreaseEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "离开了本群：" + e.FromQQ);
+            QQMessage.Reply (e.FromQQ, e.FromGroup, "离开了本群：" + e.FromQQ);
             return base.OnGroupMemberLeave(e);
         }
         /// <summary>
@@ -215,7 +216,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupNameChange(QMGroupNameChangeEventArgs e)
         {
-            Reply(e.RobotQQ, e.FromGroup.Id, "群名修改成了："+e.NewCard);
+            QQMessage.Reply(default, e.FromGroup, "群名修改成了：" + e.NewCard);
             return base.OnGroupNameChange(e);
         }
         /// <summary>
@@ -225,7 +226,14 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberRemoveMessage(QMGroupMemberRemoveMessageEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup,e.FromQQ+"撤回了一条涩涩的消息");
+            lock (QQMessageLock) {
+                for (int i =0;i<QQMessages.Count;i++) {
+                    if(QQMessages[i].MessageID == e.MessageId) {
+                        QQMessages[i].Reply($"撤回了{QQMessages[i].MessageText}");
+                        break;
+                    }
+                }
+            }
             return base.OnGroupMemberRemoveMessage(e);
         }
         /// <summary>
@@ -235,7 +243,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberSetBanSpeak(QMGroupMemberBanSpeakEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup,"被管理员"+ e.OperateQQ+"禁言");
+            QQMessage.Reply (e.FromQQ, e.FromGroup, "被管理员"+ e.OperateQQ+"禁言");
             return base.OnGroupMemberSetBanSpeak(e);
         }
         /// <summary>
@@ -245,7 +253,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupApplyAddRequest(QMGroupAddRequestEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "被" + e.OperateQQ + "同意加入本群");
+            QQMessage.Reply (e.FromQQ, e.FromGroup,  "被" + e.OperateQQ + "同意加入本群");
             return base.OnGroupApplyAddRequest(e);
         }
         /// <summary>
@@ -255,7 +263,7 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupMemberRemoveBanSpeak(QMGroupMemberBanSpeakEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "被管理员" + e.OperateQQ + "解除禁言");
+            QQMessage.Reply (e.FromQQ, e.FromGroup,  "被管理员" + e.OperateQQ + "解除禁言");
             return base.OnGroupMemberRemoveBanSpeak(e);
         }
         /// <summary>
@@ -265,8 +273,51 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnGroupManagerRemoveMember(QMGroupMemberDecreaseEventArgs e)
         {
-            Reply(e.FromQQ, e.FromGroup, "被管理员：" + e.OperateQQ + "踢出去");
+            QQMessage.Reply (e.FromQQ, e.FromGroup,  "被管理员：" + e.OperateQQ + "踢出去");
             return base.OnGroupManagerRemoveMember(e);
         }
+
+        void OnReceiveMessage (QQMessage qqMessage)
+        {
+            DateTime expiry = DateTime.Now.AddMinutes(-2);
+            lock (QQMessageLock) {
+                for (int i = 0; i < QQMessages.Count; i++) {
+                    if (QQMessages[i].DateTime >= expiry) {
+                        QQMessages.RemoveRange(0, i);
+                        break;
+                    }
+                }
+                QQMessages.Add(qqMessage);
+            }
+            string atCode = $"[@{Config.RobotQQ}]";
+            if (qqMessage.MessageText.Contains(atCode)) {
+                string text = qqMessage.MessageText.Replace(atCode, string.Empty).Trim();
+                //qqMessage.Reply(text);
+                HttpRequestInformation request = new HttpRequestInformation() {
+                     QueryStringParameters = new HttpParameterCollection () {
+                         { "key", "free" },
+                         { "appid", 0 },
+                         { "msg", text }
+                     },
+                     Url = "http://api.qingyunke.com/api.php"
+                };
+                string json = new Http().Request(request);
+                qqMessage.Reply(JsonObject.Parse(json)["content"].String.Replace("{br}", Environment.NewLine));
+            }
+            lock (DatabaseLock) {
+                switch (qqMessage.MessageText) {
+                    case "小奏签到":
+                        CheckIn(qqMessage);
+                        break;
+                    case "小奏金币":
+                        Coins(qqMessage);
+                        break;
+                    default:
+                        CommandSystem.ExecuteText(qqMessage.MessageText, qqMessage);
+                        break;
+                }
+            }
+        }
+
     }
 }
