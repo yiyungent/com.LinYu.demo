@@ -4,17 +4,17 @@ using Eruru.MySqlHelper;
 using QQMini.PluginSDK.Core;
 using QQMini.PluginSDK.Core.Model;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 
 namespace com.linlin.demo
 {
     public class LinYuSystem : PluginBase
     {
+        /// <summary>
+        /// 作者和插件信息
+        /// </summary>
         public override PluginInfo PluginInfo
         {
             get
@@ -23,7 +23,7 @@ namespace com.linlin.demo
                 {
                     _PluginInfo = new PluginInfo()
                     {
-                        Author = "Eruru",
+                        Author = "空白",
                         Description = "BUG立华奏",
                         Name = "立华奏机器人",
                         PackageId = "com.LinYu.demo",
@@ -45,6 +45,10 @@ namespace com.linlin.demo
         string ConfigPath;
         object LoadConfigLock = new object();
 
+       public long robotQQ = 377359254;
+        /// <summary>
+        /// config配置文件
+        /// </summary>
         public override void OnInitialize()
         {
             ConfigPath = $@"Data\{PluginInfo.PackageId}\Config.json";
@@ -52,6 +56,9 @@ namespace com.linlin.demo
             SaveConfig();
         }
 
+        /// <summary>
+        /// 数据库链接
+        /// </summary>
         void LoadConfig ()
         {
             if (!File.Exists(ConfigPath))
@@ -87,7 +94,6 @@ namespace com.linlin.demo
         /// <returns></returns>
         public override QMEventHandlerTypes OnReceiveGroupMessage(QMGroupMessageEventArgs e)
         {
-            long robotQQ = 377359254;
             string atCode = $"[@{robotQQ}]";
             if (e.Message.Text.Contains(atCode))
             {
@@ -127,7 +133,7 @@ namespace com.linlin.demo
             MainWindow.Activate();
         }
         /// <summary>
-        /// 机器人功能
+        /// 机器人签到功能
         /// </summary>
         /// <param name="qq"></param>
         /// <param name="group"></param>
@@ -171,6 +177,56 @@ namespace com.linlin.demo
                 return;
             }
             QMApi.SendFriendMessage(Config.RobotQQ, qq, message.ToString());
+        }
+        /// <summary>
+        /// 当新人进群提示输出
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupMemberBeAllowAdd(QMGroupMemberIncreaseEventArgs e)
+        {
+            Reply(e.RobotQQ, e.FromGroup, "欢迎新人进群：么么哒：" + e.FromQQ);
+            return base.OnGroupMemberBeAllowAdd(e);
+        }
+        /// <summary>
+        /// 群员修改了群名片
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupMemberCardChange(QMGroupMemberCardChangeEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup,"修改了名片："+e.NewCard);
+            return base.OnGroupMemberCardChange(e);
+        }
+        /// <summary>
+        /// 当群成员离开本群
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupMemberLeave(QMGroupMemberDecreaseEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup, "离开了本群：" + e.RobotQQ);
+            return base.OnGroupMemberLeave(e);
+        }
+        /// <summary>
+        /// 当群名字ID被改变
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupNameChange(QMGroupNameChangeEventArgs e)
+        {
+            Reply(e.RobotQQ, e.FromGroup.Id, "群名修改成了："+e.NewCard);
+            return base.OnGroupNameChange(e);
+        }
+        /// <summary>
+        /// 当群员撤回消息
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
+        public override QMEventHandlerTypes OnGroupMemberRemoveMessage(QMGroupMemberRemoveMessageEventArgs e)
+        {
+            Reply(e.FromQQ, e.FromGroup,e.FromQQ+"撤回了一条涩涩的消息");
+            return base.OnGroupMemberRemoveMessage(e);
         }
 
     }
